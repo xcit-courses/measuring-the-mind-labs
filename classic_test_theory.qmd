@@ -1,0 +1,108 @@
+---
+title: "Classic Test Theory"
+---
+
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+```
+
+
+## Simulating data following CTT
+
+We will simulate IQ test scores from 5000 participants, pretending we know each person's true score.
+
+
+```{r}
+set.seed(777)
+
+# true score parameters
+m <- 100 #  mean of true score in the population
+s <- 15  # standard deviation of true score in the population
+
+# error score parameters
+s_err <- 10
+
+# simulating data
+n <- 5000
+true_scores <- rnorm(n, m, s)
+error_scores <- rnorm(n, 0, s_err)
+observed_scores <- true_scores + error_scores
+
+
+# group into a dataframe
+dd <- data.frame(true_scores, error_scores, observed_scores)
+
+```
+
+This is what the data looks like:
+
+
+```{r}
+
+dd |> 
+  pivot_longer(cols = true_scores:observed_scores) |> 
+  mutate(name = str_replace_all(name, "_", " ")) |> 
+  ggplot(aes(value, fill=name)) + 
+  geom_histogram(bins = 50, color="white") + 
+  facet_grid(name~.) +
+  guides(fill=FALSE)
+
+
+```
+
+
+## Exercise: compute reliability index
+
+As a reminder:
+
+$\rho^2_{XT} = \frac{\sigma^2_T}{\sigma^2_X}$
+
+```{r}
+# TODO: compute the reliability of the IQ test
+
+```
+
+
+What's the reliability of our IQ test?
+
+
+
+## Focus
+
+Let's focus now on a subset of our participants. For example, let's say we are testing the IQ of the smart students at our University.  
+
+```{r}
+dds <- dd |> 
+  filter(true_scores > 120)
+```
+
+Look at the data:
+
+```{r}
+
+dds |> 
+  pivot_longer(cols = true_scores:observed_scores) |> 
+  mutate(name = str_replace_all(name, "_", " ")) |> 
+  ggplot(aes(value, fill=name)) + 
+  geom_histogram(bins = 50, color="white") + 
+  facet_grid(name~.) +
+  guides(fill=FALSE)
+
+
+```
+
+
+What's the reliability of our IQ test now?
+
+
+```{r}
+# TODO: compute the reliability of the IQ test
+
+```
+
+
+What to you conclude from this? 
+
+
