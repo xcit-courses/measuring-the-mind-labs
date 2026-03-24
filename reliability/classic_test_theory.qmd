@@ -5,7 +5,6 @@ title: "Classic Test Theory"
 
 ```{r}
 library(tidyverse)
-library(ggplot2)
 ```
 
 
@@ -103,6 +102,30 @@ What's the reliability of our IQ test now?
 ```
 
 
-What to you conclude from this? 
+What do you conclude from this? 
 
+
+
+
+
+## Repeated measures
+
+Add a repetition to the simulated data
+
+```{r}
+# TODO: simulate the scenario where the same test is completed twice by the same people.
+
+
+```
+
+
+Compute the reliability using the repeated tests
+
+```{r}
+# TODO: compute the reliability of the IQ test using the repeated tests.
+
+```
+
+
+Do you get the same value as when using the previous formula (that uses true scores)?
 
