@@ -129,3 +129,56 @@ Compute the reliability using the repeated tests
 
 Do you get the same value as when using the previous formula (that uses true scores)?
 
+
+
+## Our own data
+
+Here are the results from our little study. The same "test" was completed 3 times. 
+
+```{r}
+data <- data.frame(
+  Q1 = c(5, 4, 2, 5, 7, 7, 7, 6, 7, 4, 3),
+  Q2 = c(5, 4, 2, 5, 5, 7, 6, 6, 7, 4, 3),
+  Q3 = c(5, 5, 4, 6, 5, 7, 8, 7, 8, 4, 4)
+)
+```
+
+
+
+Compute the reliability of this test. Does the reliability change across time?
+
+
+```{r}
+
+
+```
+
+
+
+## Standard error of the mean
+
+Going back to the IQ example, assume we have a participant that has an observed IQ score of 120. What is the standard error of the mean for this IQ test? What is the 95% confidence interval for this IQ score of 120?
+
+
+
+```{r}
+# TODO: compute 95% CI for observed IQ score of 120
+
+```
+
+
+
+
+
+## Questions
+
+Do you think the reliabilty index as defined by CTT is satisfactory?
+
+> Enter your response here
+
+
+If your patient fills out a questionnaire and gets a score of 19, what wouly you like a reliability index to tell you about this number?
+
+> Enter your response here
+
+
