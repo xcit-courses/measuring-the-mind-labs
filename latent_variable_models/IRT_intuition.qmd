@@ -1,0 +1,181 @@
+---
+title: "Item Response Theory: A Simulation Approach"
+format:
+  html:
+    toc: true
+    code-fold: false
+---
+
+```{r setup, message=FALSE}
+library(tidyverse)
+```
+
+## Basic idea
+
+We start by generating a sample of people with varying levels of "math" ability, and a test with items of varying difficulty.
+
+```{r}
+set.seed(42)
+
+# generate a sample of people with varying levels of "math" ability
+sample_size <- 100
+person_abilities <- rnorm(sample_size, mean = 10, sd = 2)
+
+# a test with 10 items of varying difficulty
+item_count <- 10
+item_difficulty <- rnorm(item_count, mean = 10, sd = 3)
+```
+
+## How does ability relate to the probability of a correct response?
+
+The key idea is that we look at the **difference** between an item's difficulty and the ability of a person. Think of it as a contest: if the ability of the person is higher than the difficulty of the item, the person has a higher chance of getting the response correct. If the difficulty of the item is higher than the ability of the person, the response is more likely to be incorrect. Finally, if ability and difficulty are exactly the same, we would expect there to be a 50/50 chance of either "winning".  
+
+
+
+
+There are two key properties we want our function to have:
+
+1. Its main input should be the **difference** between the ability of the person and the difficulty of the item.
+2. It should output values in the **0–1 range**, so the output can be interpreted as a probability.
+
+The **logistic function** satisfies both requirements. Here is what that function looks like:
+
+```{r}
+x <- seq(from = -3, to = 3, length.out = 100)
+y <- 1 / (1 + exp(-x))
+
+ggplot(tibble(x, y), aes(x = x, y = y)) +
+  geom_line(colour = "#2c7bb6", linewidth = 1) +
+  geom_hline(yintercept = 0.5, linetype = "dashed", colour = "grey60") +
+  geom_vline(xintercept = 0,   linetype = "dashed", colour = "grey60") +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.25)) +
+  labs(
+    title = "The Logistic Function",
+    x     = "Ability \u2212 Difficulty",
+    y     = "P(correct)"
+  ) +
+  theme_minimal()
+```
+
+As you can see in this figure, when ability equals difficulty, the difference is 0 and the probability of a correct response is exactly 0.5. As ability increases relative to difficulty, the probability approaches 1; as it decreases, it approaches 0.
+
+
+## Computing the probability of a correct response for each person-item combination
+
+Now we can calculate, for each person, how likely they are to respond correctly to each item in the test.
+
+```{r}
+simulated_data <- crossing(
+  person_id = 1:sample_size,
+  item_id   = 1:item_count
+) |>
+  mutate(
+    ability      = person_abilities[person_id],
+    difficulty   = item_difficulty[item_id],
+    delta        = ability - difficulty,
+    prob_correct = 1 / (1 + exp(-delta))
+  )
+
+glimpse(simulated_data)
+```
+
+We now have, for each person-item combination, the probability of a correct response. These are the predictions we can make when the ability and difficulty parameters are known.
+
+Here is a simpler version of the same code using explicit `for` loops, which may be easier to follow if you are new to R:
+
+```{r}
+#| eval: false
+
+simulated_data <- data.frame()
+
+for (person in 1:sample_size) {
+  for (item in 1:item_count) {
+
+    delta        <- person_abilities[person] - item_difficulty[item]
+    prob_correct <- 1 / (1 + exp(-delta))
+
+    simulated_data <- rbind(
+      simulated_data,
+      data.frame(
+        person_id    = person,
+        item_id      = item,
+        ability      = person_abilities[person],
+        difficulty   = item_difficulty[item],
+        delta        = delta,
+        prob_correct = prob_correct
+      )
+    )
+  }
+}
+```
+
+## Sampling observed responses
+
+In practice we observe a binary response (correct or incorrect), not a probability. To mimic the data we would collect in an actual experiment, we can draw a random binary outcome from each predicted probability.
+
+The idea is straightforward: generate a random number between 0 and 1 — if it is smaller than the predicted probability, we record a correct response; otherwise, incorrect.
+
+```{r}
+# quick illustration of the idea
+prob          <- 0.9
+random_number <- runif(n = 1, min = 0, max = 1)
+is_correct    <- random_number < prob
+
+# verify: if we repeat this many times, the proportion of successes should approximate the probability
+mean(runif(n = 1000) < prob)
+```
+
+We can now apply this to every row in our simulated dataset:
+
+```{r}
+set.seed(42)
+
+simulated_data <- simulated_data |>
+  mutate(
+    is_correct = runif(n()) < prob_correct,
+    response   = as.integer(is_correct)
+  )
+
+glimpse(simulated_data)
+```
+
+
+As you can see, we now have a response vector that indicates for each person-item combination if that response was correct (1) or incorrect (0).
+
+
+We can now perform various statistics / fit models on this data. For example, we can calcuate the proportion of items each person responded to correctly as well as the proportion of people who responded correctly to a given item. 
+
+
+```{r}
+simulated_data |> 
+  group_by(person_id) |> 
+  summarise(proportion_correct = mean(response))
+```
+
+```{r}
+simulated_data |> 
+  group_by(item_id) |> 
+  summarise(proportion_correct = mean(response))
+```
+
+
+## Exercises
+
+In the code above, the mean ability and mean difficulty were both set to 10. Would the predicted proabilities of responding correctly change if instead set them both to 20? What can you conclude from this?
+
+> Enter your response here
+
+
+Imagine that the difficulties had a mean of 12 instead of 10. Whould that have changed the results, and if so, how?
+
+> Enter your response here
+
+
+Looking at the proportion of people who answered a given item correctly, what can you say about the items? Have they been well chosen? 
+
+> Enter your response here
+
+
+
+
+
