@@ -1,0 +1,144 @@
+---
+title: "Test Length and Score Accuracy: CTT vs IRT"
+format: html
+---
+
+
+
+```{r}
+#| label: load-packages
+
+library(tidyverse)
+library(patchwork)
+```
+
+
+
+
+## About
+
+The goal of this notebook is to provide some basic intuition about a key difference between tests that simply sum the scores to individual items into an overall test score (CTT style) and tests that instead aim to estimate a parameter value which explains the responses within a model (IRT style): in the first case, the total score depends specifically on the items that were included in the test (all of them, nothing more nothing less); in the second case, each item contributes to improving our estimates: the more we have the better, but we can also do with less. 
+
+
+
+## Simulations
+
+The code below generates simulated data where all items have the same difficulty and the participants ability is always fixed. We vary the number of items in a test and complete each test many times to get an accurate sense of the distribution of responses.
+
+Note that the code below is somewhat lengthy and inefficient but has the benefit of being easy to understand for beginners in R.
+
+
+
+```{r}
+#| label: simulation
+
+set.seed(42)
+
+# our generative model: explains how responses are generated
+# we use this to create fake data that looks like what we think real data should look like.
+
+prob_accurate <- 0.75 # ability level: how likely the person will respond correctly to any item
+
+
+# this function returns a vector of length n, representing the responses to n items, with values of 0 and 1 for incorrect and correct responses respectively. p represent the probability of responding correctly on any given item. Here we assume that items are all of the same difficulty level.
+complete_test <- function(n, p){
+  as.numeric(runif(n) < p)
+}
+
+
+## simulations:
+
+# we will create "tests" that have a varying number of items
+item_counts <- seq(from = 1, to = 50, by = 2) 
+
+# for each test, we do 10'000 repetitions to get an accurate estimate of the distribution of the results
+n_sim <- 10000
+
+
+# we create empty vectors; these will hold the data that will be generated in the code below
+sum_scores <- rep(NA, n_sim)
+mean_scores <- rep(NA, n_sim)
+n <- rep(NA, n_sim)
+scores <- tibble()
+
+
+
+
+# we loop over all values of item_counts i.e., lengths of tests
+for (item_count in item_counts){
+  
+    # for a given test length, we repeat the test completion n_sim times
+    for (i in 1:n_sim){
+      responses <- complete_test(item_count, prob_accurate)
+      sum_scores[i] <- sum(responses)
+      mean_scores[i] <- mean(responses)
+      n[i] <- length(responses)
+    }
+  
+    # we organize the outputs that we want to save
+    tmp <- tibble(
+      item_count = item_count,
+      n = mean(n),
+      
+      # we compute summary statistics on the n_sim values
+      # we keep only the mean and the 95% CI
+      sum_scores_mean = mean(sum_scores),
+      sum_scores_lower = quantile(sum_scores, probs = 0.025),
+      sum_scores_upper = quantile(sum_scores, probs = 0.975),
+    
+      mean_scores_mean = mean(mean_scores),
+      mean_scores_lower = quantile(mean_scores, probs = 0.025),
+      mean_scores_upper = quantile(mean_scores, probs = 0.975)
+      )
+    
+    # on each iteration we paste the row of summary statistics we just created (i.e., tmp) to the scores data frame (pasting rows =  row bind = rbind)
+    scores <- rbind(scores,tmp)
+
+}
+```
+
+
+
+## Results
+
+
+```{r}
+#| label: create-plots
+
+p_sum <- ggplot(scores, aes(item_count, sum_scores_mean, ymin  = sum_scores_lower, ymax = sum_scores_upper)) +
+  geom_pointrange() +
+  labs(x = "number of test items",
+       y = "score: sum of correct responses", 
+       title = "Summing correct responses") +
+  theme_minimal()
+
+
+
+
+p_mean <- ggplot(scores, aes(item_count, mean_scores_mean, ymin  = mean_scores_lower, ymax = mean_scores_upper)) +
+  geom_pointrange()+
+  labs(x = "number of test items",
+       y = "score: mean of correct responses", 
+       title = "Estimating parameters") +
+  theme_minimal()
+```
+
+
+```{r}
+#| label: fig-scores-comparison
+#| fig-cap: "Comparison of sum scores (left) and mean scores (right) as a function of the number of test items. Error bars represent 95% intervals across 10,000 simulated test completions."
+
+(p_sum | p_mean)
+
+```
+
+The figure on the left hand side, shows that the sum of the scores increases with the number of items. The error bars increase too. If a person completes only 30 items instead of 50, we can't easily compare their scores with those of people who completed all 50 items.
+
+
+The figure on the right hand side shows our estimates for our "ability parameter" that we are interested in. In this case, the more data we have the more accurate our estimate (smaller error bars). If a person completes fewer trials, e.g., 30 instead of 50, we still get a meaningful estimate (it's just noisier). We can still meaningfully compare people's parameter estimates even if they completed different numbers of items.
+
+
+
+
+
+
